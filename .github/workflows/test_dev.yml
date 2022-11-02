@@ -40,6 +40,7 @@ jobs:
         run: echo "test=hello" >> $GITHUB_OUTPUT
         
   start:
+     needs: [test]
      runs-on: ubuntu-latest
      outputs:
       output1: ${{ steps.step1.outputs.test }}
