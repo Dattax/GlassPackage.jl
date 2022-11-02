@@ -1,4 +1,7 @@
 name: Demo Dev
+concurrency: 
+  group: demo-dev
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
@@ -6,19 +9,15 @@ on:
     branches:
       - 'master'
   pull_request:
-    branches: 'master'
+    branches: 
+      - 'master'
   
 jobs:
   start:
     runs-on: [self-hosted]
-    outputs:
-      ref-tag: ${{ steps.generate-image-tags.outputs.ref-tag }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    - name: Generate tags
-      id: generate-image-tags
-      uses: ./.github/actions/generate-image-tags
 
   demo-ci-test:
     uses: ./.github/workflows/CI.yml
@@ -26,14 +25,9 @@ jobs:
 
   finish:
     runs-on: [self-hosted]
-    needs: [demo-ci-test]
+    needs: [start, demo-ci-test]
     if: always()
     steps:
     - name: Write github summary
       run: |
         echo "# Build Dev Summary" >> $GITHUB_STEP_SUMMARY
-    - name: Write blame
-      if: ${{ needs.blame-on-failure.result == 'success' }}
-      run: |
-        echo "## Offending Commits" >> $GITHUB_STEP_SUMMARY
-        echo "${{ needs.blame-on-failure.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
