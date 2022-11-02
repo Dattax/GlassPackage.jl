@@ -24,6 +24,20 @@ jobs:
   build:
     needs: [start]
     runs-on: ubuntu-latest
+    outputs:
+      output1: ${{ steps.stepc.outputs.test }}
+      output2: ${{ steps.stepd.outputs.test }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: stepc
+        run: echo Hello, world!
+      - id: stepd
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+  prod_ready:
+    needs: [build]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Run a one-line script
