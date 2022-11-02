@@ -1,8 +1,5 @@
-using ReTest, GlassPackage
+using GlassPackage
 using Test
-include("MyPackageTests.jl")
-
-retest(GlassPackage, MyPackageTests)
 
 @testset "GlassPackage.jl" begin
     @testGlassPackage.greet_glass() == "Hello GlassPackage!"
