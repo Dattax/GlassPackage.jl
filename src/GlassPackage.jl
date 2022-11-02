@@ -1,5 +1,7 @@
 module GlassPackage
+using InlineTest
 
-# Write your package code here.
+export greet_glass
+include("functions.jl")
 
 end
