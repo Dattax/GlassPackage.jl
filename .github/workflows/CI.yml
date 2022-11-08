@@ -1,20 +1,26 @@
+# This is the name of the CI file and if it belongs to any group of actions
 name: CI
+concurrency: 
+  group: demo
+  cancel-in-progress: false
+
+# This is where you indicate how each step in the process starts including push and pull requests and this workflow_dispatch line is so you can also choose to start jobs manually.
 on:
-  workflow_call:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-    tags: ['*']
+    branches: [ "main" ]
   pull_request:
-concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+    branches: [ "main" ]
+
+# Here you have the main content of this file. Jobs are the main struture to house each step in the process. This file has 4 jobs and each job has a number of steps. 
 jobs:
-  test:
+
+# The first job - I've called test and it has the aforementioned matrix of tests to make sure our package works with various versions of Julia. In this demo, it also has an output field that just echos hello so we can use that to indicate to the next job when to start.
+  pre-test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    outputs:
+      output1: ${{ steps.stepe.outputs.test }}
     strategy:
       fail-fast: false
       matrix:
@@ -35,3 +41,47 @@ jobs:
       - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+      - id: stepe
+        run: echo "test=hello" >> $GITHUB_OUTPUT    
+  
+  # The next job I've called start and it has a need to not run until the pre-test job is completed. This job has to steps and for now, these are just filler steps to show you how this works. These steps could be different unit test and security checks depending on how you want to setup your yaml workflows.
+  start:
+     needs: [pre-test]
+     runs-on: ubuntu-latest
+     outputs:
+      output1: ${{ steps.step1.outputs.test }}
+      output2: ${{ steps.step2.outputs.test }}
+     steps:
+      - id: step1
+        run: echo "test=hello" >> $GITHUB_OUTPUT
+      - id: step2
+        run: echo "test=world" >> $GITHUB_OUTPUT
+
+# When the start job is completed the build job and its subsequent steps will activate and provide an output and once those are done.
+  build:
+    needs: [start]
+    runs-on: ubuntu-latest
+    outputs:
+      output1: ${{ steps.stepc.outputs.test }}
+      output2: ${{ steps.stepd.outputs.test }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: stepc
+        run: echo Hello, world!
+      - id: stepd
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+
+# We'll end with a prod_ready job that can indicate to another pipeline that this part of our software development testing is complete. So let's see it in action.
+  prod_ready:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run a one-line script
+        run: echo Hello, world!
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
